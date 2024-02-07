@@ -36,6 +36,26 @@ public class UserServiceImpl implements UserService {
             user.setAccount_updated(LocalDateTime.now());
 
             return userRepository.save(user);
+    }
+
+    @Override
+    public void updateUser(String username, UserUpdateDto updateDto) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+
+        if (updateDto.getFirstName() != null && !updateDto.getFirstName().isBlank()) {
+            user.setFirstName(updateDto.getFirstName());
         }
+
+        if (updateDto.getLastName() != null && !updateDto.getLastName().isBlank()) {
+            user.setLastName(updateDto.getLastName());
+        }
+
+        if (updateDto.getPassword() != null && !updateDto.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(updateDto.getPassword()));
+        }
+
+        userRepository.save(user);
+    }
 
 }
