@@ -48,6 +48,23 @@ public class UserController {
         }
     }
 
+    @PutMapping("/self")
+    public ResponseEntity<?> updateUser(Principal principal,
+                                        @RequestBody UserUpdateDto updateDto) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // Cast the Principal to UsernamePasswordAuthenticationToken to access UserDetails
+        UsernamePasswordAuthenticationToken authToken = (UsernamePasswordAuthenticationToken) principal;
+        UserDetails userDetails = (UserDetails) authToken.getPrincipal();
+
+        // Use the username from UserDetails to update the user
+        service.updateUser(userDetails.getUsername(), updateDto);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
 
     private Map<String, Object> UserRequestBody(User user) {
         Map<String, Object> responseBody = new HashMap<>();
