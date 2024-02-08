@@ -65,6 +65,23 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    @GetMapping("/self")
+    public ResponseEntity<Map<String, Object>> getUser(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // Cast the Principal to UsernamePasswordAuthenticationToken to access UserDetails
+        UsernamePasswordAuthenticationToken authToken = (UsernamePasswordAuthenticationToken) principal;
+        UserDetails userDetails = (UserDetails) authToken.getPrincipal();
+
+        User user = service.getUser(userDetails.getUsername());
+        Map<String, Object> responseBody = UserRequestBody(user);
+
+
+        return ResponseEntity.ok(responseBody);
+    }
+
 
     private Map<String, Object> UserRequestBody(User user) {
         Map<String, Object> responseBody = new HashMap<>();

@@ -1,9 +1,6 @@
 package com.csye6225.assignment1.config;
 
-import com.csye6225.assignment1.filter.NoAuthForOpenUrlsFilter;
-import com.csye6225.assignment1.filter.NoQueryParamFilter;
-import com.csye6225.assignment1.filter.NoRequestBodyFilter;
-import com.csye6225.assignment1.filter.ResponseFilter;
+import com.csye6225.assignment1.filter.*;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +22,7 @@ public class FilterConfig {
     public FilterRegistrationBean<NoRequestBodyFilter> noRequestBodyFilter() {
         FilterRegistrationBean<NoRequestBodyFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new NoRequestBodyFilter());
-        registrationBean.addUrlPatterns("/healthz"); 
+        registrationBean.addUrlPatterns("/healthz");
         registrationBean.setOrder(3);
         return registrationBean;
     }
@@ -48,4 +45,15 @@ public class FilterConfig {
         registrationBean.setOrder(4);
         return registrationBean;
     }
+
+    @Bean
+    public FilterRegistrationBean<GetUserFilter> getUserFilter() {
+        FilterRegistrationBean<GetUserFilter> registrationBean = new FilterRegistrationBean<>();
+        registrationBean.setFilter(new GetUserFilter());
+        registrationBean.addUrlPatterns("/vi/user/self");
+        registrationBean.setOrder(5);
+        return registrationBean;
+    }
+
+
 }

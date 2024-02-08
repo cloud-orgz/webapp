@@ -12,11 +12,11 @@ import org.springframework.util.StreamUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-@Order(3)
-@WebFilter("/healthz")
-public class NoRequestBodyFilter implements Filter {
+@Order(5)
+@WebFilter("/v1/user/self")
+public class GetUserFilter implements Filter {
 
-    private static final Logger logger = LoggerFactory.getLogger(NoRequestBodyFilter.class);
+    private static final Logger logger = LoggerFactory.getLogger(GetUserFilter.class);
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
@@ -24,13 +24,12 @@ public class NoRequestBodyFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
 
         String body = StreamUtils.copyToString(httpRequest.getInputStream(), StandardCharsets.UTF_8);
-        if(!httpRequest.getMethod().equalsIgnoreCase("GET")){
-            logger.warn("Only get Method is allowed: {}", httpRequest.getRequestURI());
-            httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-            return;
-        }if (!body.isEmpty()&&httpRequest.getMethod().equalsIgnoreCase("GET")) {
+        if (!body.isEmpty()&&httpRequest.getMethod().equalsIgnoreCase("GET")) {
             logger.warn("Request with Body received: {}", httpRequest.getRequestURI());
             httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }if(!httpRequest.getMethod().equalsIgnoreCase("GET")||!httpRequest.getMethod().equalsIgnoreCase("PUT")){
+            httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
             return;
         }
 

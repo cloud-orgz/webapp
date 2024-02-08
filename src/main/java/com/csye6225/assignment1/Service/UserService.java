@@ -11,4 +11,6 @@ public interface UserService {
 
     public void updateUser(String username, UserUpdateDto updateDto);
 
+    public User getUser(String username);
+
 }
