@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 public interface UserService {
     public User createUser(UserDto userDto)
 
-    public void updateUser(String username, UserUpdateDto updateDto);
+    public void updateUser(String username, UserUpdateDto updateDto)
 
     public User getUser(String username);
 
