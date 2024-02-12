@@ -2,7 +2,7 @@
 
 
 
-## Running Spring Boot Application on CentOS
+### Running Spring Boot Application on CentOS
 
 The steps required to run a Spring Boot application on a CentOS server. It includes SSH access, activating swap memory, installing MySQL, Java, Maven, and finally, deploying and running the Spring Boot application.
 
