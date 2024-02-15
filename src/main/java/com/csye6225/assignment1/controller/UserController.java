@@ -50,7 +50,13 @@ public class UserController {
 
     @PutMapping("/self")
     public ResponseEntity<?> updateUser(Principal principal,
-                                        @RequestBody UserUpdateDto updateDto) {
+                                       @Valid @RequestBody UserUpdateDto updateDto, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            String errorMessages = bindingResult.getFieldErrors().stream()
+                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                    .collect(Collectors.joining(", "));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessages);
+        }
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
