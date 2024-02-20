@@ -23,7 +23,7 @@ jobs:
       run: mvn clean package -DskipTests
 
     - name: Authenticate with GCP
-      uses: google-github-actions/setup-gcloud@v0
+      uses: google-github-actions/setup-gcloud@v2
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         service_account_key: ${{ secrets.GCP_SA_KEY }}
@@ -38,7 +38,7 @@ jobs:
     - name: Build Custom GCP Image with Packer
       run: |
         cd packer
-        packer build -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' .
+        packer build -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' -var 'project_id'=${{ secrets.GCP_PROJECT_ID }} -var 'zone'=${{ secrets.GCP_ZONE }} .
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
