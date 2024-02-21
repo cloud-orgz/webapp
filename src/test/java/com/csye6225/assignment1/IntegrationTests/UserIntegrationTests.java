@@ -110,7 +110,7 @@ public class UserIntegrationTests {
         System.out.println("Updated Get Response Body: " + getResponse.getBody());
 
         // Verify the updated details are present in the response
-        assertThat(getResponse.getBody()).contains("test");
+        assertThat(getResponse.getBody()).contains("testmukulsai");
         assertThat(getResponse.getBody()).contains("UpdatedDoe");
     }
     private String generateRandomEmail() {
