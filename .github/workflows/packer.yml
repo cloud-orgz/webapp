@@ -36,7 +36,9 @@ jobs:
       - name: Validate Packer Template with Variables
         working-directory: packer-dir
         run: |
-          packer validate -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' -var 'project_id'=${{ secrets.GCP_PROJECT_ID }} -var 'zone'=${{ secrets.GCP_ZONE }} -var 'mysql_user'=${{ secrets.MYSQL_USER }} -var 'mysql_password'=${{ secrets.MYSQL_PASSWORD }} .
-        env:
-          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          GCP_ZONE: ${{ secrets.GCP_ZONE }}
+          packer validate \
+            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var "artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar" \
+            -var "zone=${{ secrets.GCP_ZONE }}" \
+            -var "mysql_user=${{ secrets.MYSQL_USER }}" \
+            -var "mysql_password=${{ secrets.MYSQL_PASSWORD }}" .
