@@ -14,7 +14,7 @@ The steps required to run a Spring Boot application on a CentOS server. It inclu
 
 ## Step 1: SSH into Your CentOS Server
 
-Start by SSH'ing into your CentOS server with the following command. Replace the key location and server IP address as per your setup:
+Start by SSH'ing into your CentOS server with the following command. Replace the key location and server IP address as per your setup :
 
 ```
 ssh -i /path/to/key root@{ipAddress}
