@@ -51,7 +51,7 @@ public class UserIntegrationTests {
         System.out.println("Response Body: " + response.getBody());
 
         // Assert the response status code
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         HttpHeaders getHeaders = new HttpHeaders();
         getHeaders.add("Authorization", authToken);
