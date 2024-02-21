@@ -12,10 +12,10 @@ jobs:
       mysql:
         image: mysql:5.7
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: mukul
           MYSQL_DATABASE: cloud
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_USER: mukul
+          MYSQL_PASSWORD: mukul
         ports:
           - 3306:3306
         options: >-
@@ -23,7 +23,6 @@ jobs:
           --health-interval=10s
           --health-timeout=10s
           --health-retries=10
-
     steps:
       - uses: actions/checkout@v2
 
@@ -41,5 +40,5 @@ jobs:
         run: mvn test
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/cloud
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.MYSQL_USER }}
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: mukul
