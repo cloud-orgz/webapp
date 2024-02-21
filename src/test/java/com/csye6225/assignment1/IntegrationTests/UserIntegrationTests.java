@@ -90,7 +90,7 @@ public class UserIntegrationTests {
         updateHeaders.setContentType(MediaType.APPLICATION_JSON);
         updateHeaders.add("Authorization", authToken);
         Map<String, Object> updatedUserDetails = new HashMap<>();
-        updatedUserDetails.put("first_name", "UpdatedDoe");
+        updatedUserDetails.put("first_name", "UpdatedJane");
         updatedUserDetails.put("last_name", "UpdatedDoe");
         HttpEntity<Map<String, Object>> updateRequest = new HttpEntity<>(updatedUserDetails, updateHeaders);
 
