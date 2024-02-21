@@ -41,7 +41,7 @@ jobs:
             -var "zone=${{ secrets.GCP_ZONE }}" \
             -var "mysql_user=${{ secrets.MYSQL_USER }}" \
             -var "mysql_password=${{ secrets.MYSQL_PASSWORD }}" \
-            packer-dir/template.pkr.hcl
+            .
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           GCP_ZONE: ${{ secrets.GCP_ZONE }}
