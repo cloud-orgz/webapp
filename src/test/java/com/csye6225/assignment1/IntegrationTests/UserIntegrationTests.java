@@ -106,12 +106,12 @@ public class UserIntegrationTests {
         HttpEntity<String> getRequest = new HttpEntity<>(getHeaders);
 
         ResponseEntity<String> getResponse = restTemplate.exchange(getUserUrl, HttpMethod.GET, getRequest, String.class);
-        assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         System.out.println("Updated Get Response Body: " + getResponse.getBody());
 
         // Verify the updated details are present in the response
-        assertThat(getResponse.getBody()).contains("testmukulsai");
-        assertThat(getResponse.getBody()).contains("UpdatedDoe");
+        assertThat(getResponse.getBody()).contains("mukulsai");
+        assertThat(getResponse.getBody()).contains("aetbnaerhWV");
     }
     private String generateRandomEmail() {
         return "testuser+" + UUID.randomUUID().toString() + "@example.com";
