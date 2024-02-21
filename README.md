@@ -22,7 +22,7 @@ ssh -i /path/to/key root@{ipAddress}
 
 ## Step 2: Activate Swap Memory
 
-Allocate and activate swap memory using the following commands:
+Allocate and activate swap memory using the following commands :
 
 ```
 sudo fallocate -l 1G /swapfile
