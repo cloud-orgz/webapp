@@ -20,6 +20,10 @@ jobs:
         with:
           version: 1.8.6
 
+      - name: Initialize Packer
+        working-directory: packer-dir
+        run: packer init .
+
       - name: Run packer fmt
         working-directory: packer-dir
         run: |
