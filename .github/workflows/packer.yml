@@ -1,0 +1,32 @@
+name: Packer Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  packer-checks:
+    name: Packer Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup `packer`
+        uses: hashicorp/setup-packer@main
+        id: setup
+        with:
+          version: 1.8.6
+
+      - name: Run packer fmt
+        run: |
+          packer fmt -check -recursive .
+          if [ $? -ne 0 ]; then
+            echo "Packer template formatting check failed!"
+            exit 1
+          fi
+
+      - name: Validate Packer Template
+        run: packer validate .
