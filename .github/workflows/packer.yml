@@ -34,6 +34,7 @@ jobs:
           fi
 
       - name: Validate Packer Template with Variables
+        working-directory: packer-dir
         run: |
           packer validate \
             -var "artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar" \
