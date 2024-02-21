@@ -33,6 +33,17 @@ jobs:
             exit 1
           fi
 
-      - name: Validate Packer Template
-        working-directory: packer-dir
-        run: packer validate .
+      - name: Validate Packer Template with Variables
+        run: |
+          packer validate \
+            -var "artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar" \
+            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var "zone=${{ secrets.GCP_ZONE }}" \
+            -var "mysql_user=${{ secrets.MYSQL_USER }}" \
+            -var "mysql_password=${{ secrets.MYSQL_PASSWORD }}" \
+            packer-dir/template.pkr.hcl
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_ZONE: ${{ secrets.GCP_ZONE }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
