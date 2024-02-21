@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Update the system
-sudo yum update -y
+sudo dnf update -y
 
 # Install Java 17 JDK
-sudo yum install -y java-17-openjdk-devel
+sudo dnf install -y java-17-openjdk-devel
 
 # Attempt to set Java 17 as the default version
 JAVA_17_PATH=$(sudo update-alternatives --list java | grep 'java-17' | head -n 1)
@@ -30,10 +30,10 @@ java -version
 
 
 # Install Maven
-sudo yum install -y maven
+sudo dnf install -y maven
 
 # Install MySQL Server
-sudo yum install -y mysql-server
+sudo dnf install -y mysql-server
 
 # Enable and start MySQL service
 sudo systemctl enable mysqld
