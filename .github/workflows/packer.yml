@@ -24,14 +24,21 @@ jobs:
         working-directory: packer-dir
         run: packer init .
 
-      - name: Run packer fmt
+      - name: Check Packer file formatting
         working-directory: packer-dir
         run: |
-          packer fmt -check -recursive .
-          if [ $? -ne 0 ]; then
-            echo "Packer template formatting check failed!"
+          # Run packer fmt and capture any output indicating files that were formatted
+          output=$(packer fmt -recursive .)
+          echo "$output"
+          
+          # If output is not empty, fail the step
+          if [ -n "$output" ]; then
+            echo "Formatting was required for some Packer files, indicating they were not properly formatted. Please format them as shown above."
             exit 1
+          else
+            echo "All Packer files are properly formatted."
           fi
+
 
       - name: Validate Packer Template with Variables
         working-directory: packer-dir
