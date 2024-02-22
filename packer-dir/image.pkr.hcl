@@ -31,4 +31,5 @@ build {
   provisioner "shell" {
     script = "./scripts/create_user.sh"
   }
+}
 
