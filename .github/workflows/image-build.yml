@@ -37,16 +37,15 @@ jobs:
     - name: Build with Maven
       run: mvn clean package -DskipTests
 
-    - id: 'auth'
-      uses: 'google-github-actions/auth@v2'
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v0.4.0
       with:
-        credentials_json: '${{ secrets.secrets.GCP_SA_KEY }}'
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - name: 'Set up Cloud SDK'
-      uses: 'google-github-actions/setup-gcloud@v2'
-
-    - name: 'Use gcloud CLI'
-      run: 'gcloud info'
+    - name: Set up gcloud CLI
+      uses: google-github-actions/setup-gcloud@v0.2.0
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
       
     - name: Setup `packer`
       uses: hashicorp/setup-packer@main
