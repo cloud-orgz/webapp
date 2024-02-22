@@ -24,17 +24,23 @@ jobs:
         working-directory: packer-dir
         run: packer init .
 
-      - name: Run packer fmt and check for unformatted files
+      - name: Check Packer file formatting
         working-directory: packer-dir
+        id: packer_fmt
         run: |
-          # Format Packer files
-          packer fmt -recursive .
-          # Check if any files were modified by the formatting
-          git diff --exit-code . || {
-            echo "::error::Packer template formatting has modified files, indicating they were not properly formatted."
-            exit 1
-          }
-
+          output=$(packer fmt -recursive .)
+          if [ -n "$output" ]; then
+            echo "::set-output name=formatted::true"
+            echo "$output"
+          else
+            echo "::set-output name=formatted::false"
+          fi
+      
+      - name: Fail if formatting was needed
+        if: steps.packer_fmt.outputs.formatted == 'true'
+        run: |
+          echo "Formatting was required for some Packer files, indicating they were not properly formatted."
+          exit 1
 
       - name: Validate Packer Template with Variables
         working-directory: packer-dir
