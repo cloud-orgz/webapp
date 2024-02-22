@@ -27,8 +27,11 @@ jobs:
       - name: Run packer fmt
         working-directory: packer-dir
         run: |
+          echo "Checking format..."
           packer fmt -check -recursive .
-          if [ $? -ne 0 ]; then
+          result=$?
+          echo "Format check exit code: $result"
+          if [ $result -ne 0 ]; then
             echo "Packer template formatting check failed!"
             exit 1
           fi
