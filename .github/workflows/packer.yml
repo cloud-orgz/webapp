@@ -26,21 +26,19 @@ jobs:
 
       - name: Check Packer file formatting
         working-directory: packer-dir
-        id: packer_fmt
         run: |
+          # Run packer fmt and capture any output indicating files that were formatted
           output=$(packer fmt -recursive .)
+          echo "$output"
+          
+          # If output is not empty, fail the step
           if [ -n "$output" ]; then
-            echo "::set-output name=formatted::true"
-            echo "$output"
+            echo "Formatting was required for some Packer files, indicating they were not properly formatted. Please format them as shown above."
+            exit 1
           else
-            echo "::set-output name=formatted::false"
+            echo "All Packer files are properly formatted."
           fi
-      
-      - name: Fail if formatting was needed
-        if: steps.packer_fmt.outputs.formatted == 'true'
-        run: |
-          echo "Formatting was required for some Packer files, indicating they were not properly formatted."
-          exit 1
+
 
       - name: Validate Packer Template with Variables
         working-directory: packer-dir
