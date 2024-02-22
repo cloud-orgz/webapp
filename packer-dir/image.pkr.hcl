@@ -20,24 +20,15 @@ build {
     ]
   }
 
-  provisioner "shell" {
-    script = "./scripts/configure_application.sh"
-    environment_vars = [
-      "MYSQL_USER=${var.mysql_user}",
-      "MYSQL_PASSWORD=${var.mysql_password}",
-    ]
-  }
+    provisioner "shell" {
+      script = "./scripts/configure_application.sh"
+      environment_vars = [
+        "MYSQL_USER=${var.mysql_user}",
+        "MYSQL_PASSWORD=${var.mysql_password}",
+      ]
+    }
 
   provisioner "shell" {
     script = "./scripts/create_user.sh"
   }
-
-
-
-
-
-
-
-
-
 }
