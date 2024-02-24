@@ -13,7 +13,7 @@ build {
   }
 
   provisioner "shell" {
-    script = "./scripts/install_dependencies.sh
+    script = "./scripts/install_dependencies.sh"
     environment_vars = [
       "MYSQL_USER=${var.mysql_user}",
       "MYSQL_PASSWORD=${var.mysql_password}",
