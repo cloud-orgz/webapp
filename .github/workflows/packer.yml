@@ -46,6 +46,4 @@ jobs:
           packer validate \
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "artifact_path=${{ github.workspace }}/src/main/java/com/csye6225/assignment1/Assignment1Application.java" \
-            -var "zone=${{ secrets.GCP_ZONE }}" \
-            -var "mysql_user=${{ secrets.MYSQL_USER }}" \
-            -var "mysql_password=${{ secrets.MYSQL_PASSWORD }}" .
+            -var "zone=${{ secrets.GCP_ZONE }}" .
