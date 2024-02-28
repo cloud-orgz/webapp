@@ -27,27 +27,3 @@ fi
 # Verification step
 echo "Verification: Current default Java version:"
 java -version
-
-
-# Install Maven
-sudo dnf install -y maven
-
-# Install MySQL Server
-sudo dnf install -y mysql-server
-
-# Enable and start MySQL service
-sudo systemctl enable mysqld
-sudo systemctl start mysqld
-
-# Secure the MySQL installation (optional, recommended for production)
-# sudo mysql_secure_installation
-
-# Create a MySQL user and grant privileges
-# Create MySQL user
-sudo mysql -e "CREATE USER '${MYSQL_USER}'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}';"
-
-# Grant privileges to the user
-sudo mysql -e "GRANT ALL PRIVILEGES ON *.* TO '${MYSQL_USER}'@'localhost' WITH GRANT OPTION;"
-
-# Apply changes
-sudo mysql -e "FLUSH PRIVILEGES;"

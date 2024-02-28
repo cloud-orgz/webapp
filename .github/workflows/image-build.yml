@@ -57,7 +57,7 @@ jobs:
       run: |
         cd packer-dir
         packer init .
-        packer build -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' -var 'project_id'=${{ secrets.GCP_PROJECT_ID }} -var 'zone'=${{ secrets.GCP_ZONE }} -var 'mysql_user'=${{ secrets.MYSQL_USER }} -var 'mysql_password'=${{ secrets.MYSQL_PASSWORD }} .
+        packer build -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' -var 'project_id'=${{ secrets.GCP_PROJECT_ID }} -var 'zone'=${{ secrets.GCP_ZONE }}  .
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
