@@ -25,13 +25,4 @@ variable "artifact_path" {
   description = "java artifact_path"
 }
 
-variable "mysql_user" {
-  type    = string
-  default = "default_user"
-}
-
-variable "mysql_password" {
-  type    = string
-  default = "default_password"
-}
 
