@@ -13,7 +13,7 @@ public class DatabaseBootstrapConfig {
     @Autowired
     private DataSource dataSource;
 
-    @Value("${DB_NAME}") // This line injects the DB_NAME value from your .env file
+    @Value("${Database_Name}") // This line injects the DB_NAME value from your .env file
     private String dbName;
 
     @PostConstruct
