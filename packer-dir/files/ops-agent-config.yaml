@@ -1,0 +1,15 @@
+logging:
+  receivers:
+    my-app-receiver:
+      type: files
+      include_paths:
+        - /var/logs/webapp/*.log  # Assuming all logs in this directory need to be collected
+      json_parser:
+        timestamp_key: "@timestamp"
+        message_key: "message"
+        severity_key: "level"
+  service:
+    pipelines:
+      default_pipeline:
+        receivers: [my-app-receiver]
+
