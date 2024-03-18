@@ -2,7 +2,7 @@
 <configuration>
 
     <!-- Define the LOG_PATH property with a default fallback -->
-    <property name="LOG_PATH" value="${LOG_PATH:- /var/logs/myapp/}" />
+    <property name="LOG_PATH" value="${LOG_PATH:- /var/logs/webapp/}" />
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
