@@ -23,7 +23,7 @@ build {
   provisioner "shell" {
     script = "./scripts/create_user.sh"
   }
-  
+
   provisioner "file" {
     source      = "./files/ops-agent-config.yaml"
     destination = "/tmp/ops-agent-config.yaml"
