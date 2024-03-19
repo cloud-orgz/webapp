@@ -25,11 +25,6 @@ build {
   }
 
   provisioner "file" {
-    source      = var.artifact_path
-    destination = "/opt/webapp/assignment1-1.0.0.jar"
-  }
-
-  provisioner "file" {
     source      = "./files/ops-agent-config.yaml"
     destination = "/tmp/ops-agent-config.yaml"
   }
