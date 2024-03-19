@@ -3,21 +3,20 @@ logging:
     my-app-receiver:
       type: files
       include_paths:
-        - /var/logs/webapp/*.log
-
+        - /var/logs/webapp/application.json.log
+      record_log_file_path: true
   processors:
-    my-app-json-parser:
+    json_parser:
       type: parse_json
-      field: jsonPayload
-      time_key: "@timestamp"
-      time_format: "%Y-%m-%dT%H:%M:%S.%L%Z"
-      message_key: "message"
-      severity_key: "level"
-
+      time_key: "timestamp"
+      time_format: "%Y-%m-%dT%H:%M:%S.%fZ"
+    move_severity:
+      type: modify_fields
+      fields:
+        severity:
+          move_from: jsonPayload.level
   service:
     pipelines:
       default_pipeline:
         receivers: [my-app-receiver]
-        processors: [my-app-json-parser]
-
-
+        processors: [json_parser, move_severity]
