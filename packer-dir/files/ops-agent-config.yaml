@@ -8,7 +8,7 @@ logging:
   processors:
     json_parser:
       type: parse_json
-      time_key: "timestamp"
+      time_key: jsonPayload.timestamp
       time_format: "%Y-%m-%dT%H:%M:%S.%fZ"
     move_severity:
       type: modify_fields
