@@ -6,10 +6,15 @@ logging:
         - /var/logs/webapp/application.json.log
       record_log_file_path: true
   processors:
-    json_parser:
+    parse_java_multiline:
+      type: parse_multiline
+      match_any:
+        - type: language_exceptions
+          language: java
+    extract_structure:
       type: parse_json
-      time_key: jsonPayload.time
-      time_format: "%Y-%m-%dT%H:%M:%S.%fZ"
+      time_key: time
+      time_format: "%Y-%m-%dT%H:%M:%S.%L"
     move_severity:
       type: modify_fields
       fields:
@@ -19,4 +24,4 @@ logging:
     pipelines:
       default_pipeline:
         receivers: [my-app-receiver]
-        processors: [move_severity, json_parser]
+        processors: [parse_java_multiline, extract_structure, move_severity]
