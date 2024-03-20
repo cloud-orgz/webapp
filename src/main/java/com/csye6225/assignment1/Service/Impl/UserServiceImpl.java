@@ -4,7 +4,10 @@ import com.csye6225.assignment1.entities.User;
 import com.csye6225.assignment1.Service.UserService;
 import com.csye6225.assignment1.dto.UserDto;
 import com.csye6225.assignment1.dto.UserUpdateDto;
+import com.csye6225.assignment1.filter.GetUserFilter;
 import com.csye6225.assignment1.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +24,7 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
     @Override
     public User createUser(UserDto userDto) {
             if (userRepository.findByUsername(userDto.getUsername()).isPresent()) {
@@ -34,7 +38,7 @@ public class UserServiceImpl implements UserService {
             user.setLastName(userDto.getLastName());
             user.setAccountCreated(LocalDateTime.now());
             user.setAccount_updated(LocalDateTime.now());
-
+            logger.info("created user with username "+user.getUsername());
             return userRepository.save(user);
     }
 
