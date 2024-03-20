@@ -19,4 +19,4 @@ logging:
     pipelines:
       default_pipeline:
         receivers: [my-app-receiver]
-        processors: [json_parser, move_severity]
+        processors: [move_severity, json_parser]
