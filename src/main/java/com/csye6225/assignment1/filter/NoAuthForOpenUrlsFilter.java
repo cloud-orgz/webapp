@@ -28,7 +28,7 @@ public class NoAuthForOpenUrlsFilter implements Filter {
 
 
         // Check for Authorization header in request to open URLs
-        if (("/healthz".equals(path) || "/v1/user".equals(path)) && isAuthHeaderPresent) {
+        if (("/healthz".equals(path) || "/v1/user".equals(path) || "/v1/user/verify".equals(path)) && isAuthHeaderPresent) {
             httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }

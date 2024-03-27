@@ -36,6 +36,7 @@ public class User {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private LocalDateTime accountUpdated = LocalDateTime.now();
 
+    private boolean verified = false;
     // Getters and setters for all fields
 
     @PrePersist
@@ -98,6 +99,14 @@ public class User {
 
     public String getPassword() {
         return password;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
     }
 }
 

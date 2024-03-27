@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests((requests) -> requests
                         .requestMatchers("/healthz").permitAll()
                         .requestMatchers("/v1/user").permitAll()
+                        .requestMatchers("/v1/user/verify").permitAll()
                         .requestMatchers("/v1/user/self").authenticated()
                 )
                 .httpBasic() // Use HTTP Basic authentication
