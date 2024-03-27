@@ -1,11 +1,14 @@
 package com.csye6225.assignment1.IntegrationTests;
 
+import com.csye6225.assignment1.entities.User;
+import com.csye6225.assignment1.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.Base64;
 import java.util.HashMap;
@@ -19,6 +22,9 @@ public class UserIntegrationTests {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Autowired
+    private UserRepository userRepository;
 
     private String generateRandomEmail() {
         return "testuser+" + UUID.randomUUID().toString() + "@example.com";
@@ -51,7 +57,10 @@ public class UserIntegrationTests {
 
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-
+        User u = userRepository.findByUsername(generatedEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + generatedEmail));
+        u.setVerified(true);
+        userRepository.save(u);
         HttpHeaders getHeaders = new HttpHeaders();
         getHeaders.add("Authorization", authToken);
         HttpEntity<String> getRequest = new HttpEntity<>(getHeaders);
@@ -85,6 +94,11 @@ public class UserIntegrationTests {
 
         ResponseEntity<String> createResponse = restTemplate.postForEntity(createUserUrl, createRequest, String.class);
         assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        User u = userRepository.findByUsername(generatedEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + generatedEmail));
+        u.setVerified(true);
+        userRepository.save(u);
 
         HttpHeaders updateHeaders = new HttpHeaders();
         updateHeaders.setContentType(MediaType.APPLICATION_JSON);

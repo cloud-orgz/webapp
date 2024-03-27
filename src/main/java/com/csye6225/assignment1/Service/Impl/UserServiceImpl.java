@@ -98,4 +98,12 @@ public class UserServiceImpl implements UserService {
         return false;
     }
 
+    @Override
+    public boolean isUserVerified(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        System.out.println(user.isVerified());
+        return user.isVerified();
+    }
+
 }
