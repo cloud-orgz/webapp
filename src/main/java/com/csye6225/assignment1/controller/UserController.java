@@ -65,6 +65,11 @@ public class UserController {
         UsernamePasswordAuthenticationToken authToken = (UsernamePasswordAuthenticationToken) principal;
         UserDetails userDetails = (UserDetails) authToken.getPrincipal();
 
+        boolean isVerified = service.isUserVerified(userDetails.getUsername());
+
+        if(!isVerified){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User Not Verified");
+        }
         // Use the username from UserDetails to update the user
         service.updateUser(userDetails.getUsername(), updateDto);
 
@@ -72,7 +77,7 @@ public class UserController {
     }
 
     @GetMapping("/self")
-    public ResponseEntity<Map<String, Object>> getUser(Principal principal) {
+    public ResponseEntity<?> getUser(Principal principal) {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -84,6 +89,11 @@ public class UserController {
         User user = service.getUser(userDetails.getUsername());
         Map<String, Object> responseBody = UserRequestBody(user);
 
+        boolean isVerified = service.isUserVerified(userDetails.getUsername());
+
+        if(!isVerified){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User Not Verified");
+        }
 
         return ResponseEntity.ok(responseBody);
     }
