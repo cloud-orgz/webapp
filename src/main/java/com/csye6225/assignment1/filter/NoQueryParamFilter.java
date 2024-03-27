@@ -22,8 +22,8 @@ public class NoQueryParamFilter implements Filter {
             throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
         HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
-        
-        if (httpRequest.getQueryString() != null) {
+        String path = httpRequest.getRequestURI();
+        if (httpRequest.getQueryString() != null && !"/v1/user/verify".equals(path)) {
             logger.warn("Request with query parameters received: {}", httpRequest.getRequestURI());
             httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;

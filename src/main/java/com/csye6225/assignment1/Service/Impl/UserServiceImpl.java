@@ -1,11 +1,14 @@
 package com.csye6225.assignment1.Service.Impl;
 
+import com.csye6225.assignment1.Service.PubSubPublisherService;
 import com.csye6225.assignment1.entities.User;
 import com.csye6225.assignment1.Service.UserService;
 import com.csye6225.assignment1.dto.UserDto;
 import com.csye6225.assignment1.dto.UserUpdateDto;
+import com.csye6225.assignment1.entities.VerificationToken;
 import com.csye6225.assignment1.filter.GetUserFilter;
 import com.csye6225.assignment1.repository.UserRepository;
+import com.csye6225.assignment1.repository.VerificationTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +25,13 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
 
     @Autowired
+    private VerificationTokenRepository tokenRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private PubSubPublisherServiceImpl pubSubPublisherService;
 
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
     @Override
@@ -39,7 +48,9 @@ public class UserServiceImpl implements UserService {
             user.setAccountCreated(LocalDateTime.now());
             user.setAccount_updated(LocalDateTime.now());
             logger.info("created user with username "+user.getUsername());
-            return userRepository.save(user);
+            User savedUser = userRepository.save(user);
+            pubSubPublisherService.publishNewUserMessage(savedUser);
+            return savedUser;
     }
 
     @Override
@@ -68,6 +79,23 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
         return user;
+    }
+
+    @Override
+    public boolean verifyUser(String token) {
+        VerificationToken verificationToken = tokenRepository.findByToken(token);
+
+        if (verificationToken == null || verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            return false; // Token not found or expired
+        }
+
+        User user = verificationToken.getUser();
+        if (user != null && !user.isVerified()) {
+            user.setVerified(true);
+            userRepository.save(user);
+            return true;
+        }
+        return false;
     }
 
 }

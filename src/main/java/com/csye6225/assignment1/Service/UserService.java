@@ -13,4 +13,5 @@ public interface UserService {
 
     public User getUser(String username);
 
+    boolean verifyUser(String token);
 }
