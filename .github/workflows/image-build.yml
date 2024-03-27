@@ -27,6 +27,12 @@ jobs:
         distribution: 'adopt'
         cache: 'maven'
 
+    - name: Create GCP Credentials File
+      env:
+        GCP_CREDENTIALS: ${{ secrets.CREDS_JSON }}
+      run: |
+        echo "$GCP_CREDENTIALS" > src/main/resources/creds.json
+
     - name: Test with Maven
       run: mvn test
       env:
@@ -34,6 +40,9 @@ jobs:
         SPRING_DATASOURCE_USERNAME: ${{ secrets.GIT_MYSQL_USER }}
         SPRING_DATASOURCE_PASSWORD: ${{ secrets.GIT_MYSQL_PASSWORD }}
         LOGFILE_PATH: target/logs
+        GCP_PROJECTID: ${{ secrets.GCP_PROJECTID }}
+        TOPIC_NAME: ${{ secrets.TOPIC_NAME }}
+        CREDS_JSON: ${{ github.workspace }}/src/main/resources/creds.json
         
     - name: Build with Maven
       run: mvn clean package -DskipTests
