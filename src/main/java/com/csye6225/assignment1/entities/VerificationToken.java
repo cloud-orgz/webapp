@@ -9,8 +9,7 @@ import java.util.UUID;
 @Table(name = "`verification_tokens`")
 public class VerificationToken {
     @Id
-    @GeneratedValue(generator = "UUID")
-    private UUID id;
+    private String id;
 
     private String token;
 
