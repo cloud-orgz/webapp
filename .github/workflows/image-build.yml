@@ -75,6 +75,17 @@ jobs:
         GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
         GCP_ZONE: ${{ secrets.GCP_ZONE }}
 
+    - name: Authenticate to Google Cloud with service account
+      uses: google-github-actions/auth@v0.4.0
+      with:
+        credentials_json: ${{ secrets.CRED_JSON_VM }}
+
+    - name: Set up gcloud CLI
+      uses: google-github-actions/setup-gcloud@v0.2.0
+      with:
+        project_id: ${{ secrets.GCP_VM_PROJECT_ID }}
+
+
     - name: Get VPC Network Self-Link
       run: |
         VPC_NETWORK_SELF_LINK=$(gcloud compute networks describe ${{ secrets.VPC_NETWORK_NAME }} --format='value(selfLink)')
@@ -98,7 +109,7 @@ jobs:
           --no-address \
           --image=${{ steps.packer_build.outputs.image_id }} \
           --tags=webapp-vm-template,allow-app-traffic,deny-all-traffic,allow-ssh-traffic,load-balancer \
-          --metadata=startup-script=... \
+          --metadata=startup-script='#!/bin/bash\nset -e\nENV_PATH="/opt/webapp/.env"\nif [ ! -f "$ENV_PATH" ]; then\n  mkdir -p /opt/webapp\n  sudo gsutil cp gs://${{ secrets.BUCKET_NAME }}/creds.json /opt/webapp/creds.json\n  echo "DB_USERNAME=${{ secrets.DB_USER }}" >> $ENV_PATH\n  echo "DB_PASSWORD=${{ secrets.DB_PASS }}" >> $ENV_PATH\n  echo "DB_HOSTNAME=${{ secrets.DB_IP }}" >> $ENV_PATH\n  echo "DB_NAME=${{ secrets.DB_NAME }}" >> $ENV_PATH\n  echo "LOGFILE_PATH=/var/logs/webapp" >> $ENV_PATH\n  echo "GCP_PROJECTID=${{ secrets.GCP_VM_PROJECT_ID }}" >> $ENV_PATH\n  echo "TOPIC_NAME=${{ secrets.TOPIC_NAME_META }}" >> $ENV_PATH\n  echo "CREDS_JSON=/opt/webapp/creds.json" >> $ENV_PATH\n  sudo chown csye6225:csye6225 $ENV_PATH\n  sudo chown csye6225:csye6225 /opt/webapp/creds.json\n  echo "Startup script has executed."\nelse\n  echo ".env file already exists, skipping environment setup."\nfi' \
           --service-account=${{ secrets.SERVICE_ACCOUNT_EMAIL }} \
           --scopes=https://www.googleapis.com/auth/cloud-platform \
           --disk="auto-delete=yes,boot=yes,device-name=webapp-vm-template,image=${{ steps.packer_build.outputs.image_id }},mode=rw,size=20,type=pd-balanced"
@@ -113,8 +124,8 @@ jobs:
         DB_PASS: ${{ secrets.DB_PASS }}
         DB_IP: ${{ secrets.DB_IP }}
         DB_NAME: ${{ secrets.DB_NAME }}
-        PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-        TOPIC_NAME: ${{ secrets.TOPIC_NAME }}
+        PROJECT_ID: ${{ secrets.GCP_VM_PROJECT_ID }}
+        TOPIC_NAME: ${{ secrets.TOPIC_NAME_META }}
         SERVICE_ACCOUNT_EMAIL: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
 
