@@ -64,10 +64,91 @@ jobs:
         version: 1.8.6
 
     - name: Build Custom GCP Image with Packer
+      id: packer_build
       run: |
         cd packer-dir
         packer init .
-        packer build -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' -var 'project_id'=${{ secrets.GCP_PROJECT_ID }} -var 'zone'=${{ secrets.GCP_ZONE }}  .
+        IMAGE_ID=$(packer build -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' -var 'project_id=${{ env.GCP_PROJECT_ID }}' -var 'zone=${{ secrets.GCP_ZONE }}' . | tee /dev/tty | grep 'A disk image was created:' | awk '{print $NF}')
+        echo "::set-output name=image_id::$IMAGE_ID"
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        GCP_ZONE: ${{ secrets.GCP_ZONE }}
+
+    - name: Get VPC Network Self-Link
+      run: |
+        VPC_NETWORK_SELF_LINK=$(gcloud compute networks describe ${{ secrets.VPC_NETWORK_NAME }} --format='value(selfLink)')
+        echo "VPC_NETWORK_SELF_LINK=$VPC_NETWORK_SELF_LINK" >> $GITHUB_ENV
+
+    - name: Get Subnetwork Self-Link
+      run: |
+        SUBNETWORK_SELF_LINK=$(gcloud compute networks subnets describe ${{ secrets.SUBNETWORK_NAME }} --region ${{ secrets.GCP_REGION }} --format='value(selfLink)')
+        echo "SUBNETWORK_SELF_LINK=$SUBNETWORK_SELF_LINK" >> $GITHUB_ENV
+
+
+    - name: Create New Instance Template with Latest Image
+      id: create_template # Added an ID to this step to reference its outputs
+      run: |
+        TEMPLATE_NAME=webapp-vm-template-$(date +%Y%m%d%H%M%S)
+        gcloud compute instance-templates create $TEMPLATE_NAME \
+          --machine-type=e2-medium \
+          --region=${{ secrets.GCP_REGION }} \
+          --network=${{ env.VPC_NETWORK_SELF_LINK }} \
+          --subnet=${{ env.SUBNETWORK_SELF_LINK }} \
+          --no-address \
+          --image=${{ steps.packer_build.outputs.image_id }} \
+          --tags=webapp-vm-template,allow-app-traffic,deny-all-traffic,allow-ssh-traffic,load-balancer \
+          --metadata=startup-script=... \
+          --service-account=${{ secrets.SERVICE_ACCOUNT_EMAIL }} \
+          --scopes=https://www.googleapis.com/auth/cloud-platform \
+          --disk="auto-delete=yes,boot=yes,device-name=webapp-vm-template,image=${{ steps.packer_build.outputs.image_id }},mode=rw,size=20,type=pd-balanced"
+        echo "::set-output name=template_name::$TEMPLATE_NAME"
+      env:
+        GCP_REGION: ${{ secrets.GCP_REGION }}
+        # Corrected: Environment variable references updated to use the correct syntax
+        VPC_NETWORK_SELF_LINK: ${{ env.VPC_NETWORK_SELF_LINK }}
+        WEBAPP_SUBNET_SELF_LINK: ${{ env.SUBNETWORK_SELF_LINK }}
+        BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASS: ${{ secrets.DB_PASS }}
+        DB_IP: ${{ secrets.DB_IP }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        TOPIC_NAME: ${{ secrets.TOPIC_NAME }}
+        SERVICE_ACCOUNT_EMAIL: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+
+    - name: Get Latest Instance Template ID
+      id: get_template_id
+      run: |
+        TEMPLATE_ID=$(gcloud compute instance-templates list --filter="name='${{ steps.create_template.outputs.template_name }}'" --format="value(id)" --limit=1)
+        echo "::set-output name=template_id::$TEMPLATE_ID"
+
+    - name: Update Managed Instance Group to Use New Template
+      run: |
+        gcloud compute instance-groups managed set-instance-template ${{ secrets.MIG_NAME }} \
+          --template=${{ steps.get_template_id.outputs.template_id }} \
+          --region=${{ secrets.GCP_REGION }}
+      env:
+        MIG_NAME: ${{ secrets.MIG_NAME }}
+        REGION: ${{ secrets.GCP_REGION }}
+
+
+    - name: Get Regional Managed Instance Group Self-Link
+      run: |
+        MIG_SELF_LINK=$(gcloud compute instance-groups managed describe ${{ secrets.MIG_NAME }} --region ${{ secrets.GCP_REGION }} --format='value(selfLink)')
+        echo "MIG_SELF_LINK=$MIG_SELF_LINK" >> $GITHUB_ENV
+
+    - name: Wait for MIG Refresh to Complete
+      run: |
+        OPERATION_STATUS="RUNNING"
+        while [ "$OPERATION_STATUS" == "RUNNING" ]; do
+          OPERATION_STATUS=$(gcloud compute operations list --filter="targetLink=$MIG_LINK AND operationType=update AND status=RUNNING" --format="value(status)" --limit=1)
+          if [ -z "$OPERATION_STATUS" ]; then
+            OPERATION_STATUS="DONE"
+          fi
+          echo "Current operation status: $OPERATION_STATUS"
+          sleep 30
+        done
+      env:
+        MIG_LINK: ${{ env.MIG_SELF_LINK }}
