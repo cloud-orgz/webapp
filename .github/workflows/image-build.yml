@@ -68,18 +68,9 @@ jobs:
       run: |
         cd packer-dir
         packer init .
-        packer_output=$(packer build -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' -var 'project_id=${{ secrets.GCP_PROJECT_ID }}' -var 'zone=${{ secrets.GCP_ZONE }}' . ) 
-        echo "$packer_output"
-        if echo "$packer_output" | grep -q 'A disk image was created'; then
-          IMAGE_ID=$(echo "$packer_output" | grep 'A disk image was created' | awk -F': ' '{print $NF}')
-          echo "Image ID: $IMAGE_ID"
-          echo "::set-output name=image_id::$IMAGE_ID"
-          echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
-        else
-          echo "Packer build failed or image ID was not found."
-          exit 1
-        fi
-      shell: bash
+        IMAGE_ID=$(packer build -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' -var 'project_id=${{ secrets.GCP_PROJECT_ID }}' -var 'zone=${{ secrets.GCP_ZONE }}' | grep 'A disk image was created:' | awk '{print $NF}')
+        echo "::set-output name=image_id::$IMAGE_ID"
+        echo "Image ID: $IMAGE_ID"
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
