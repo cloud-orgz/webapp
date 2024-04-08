@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sudo dnf --disablerepo=appstream reinstall centos-stream-repos
+
 # Update the system
 sudo dnf update -y
 
