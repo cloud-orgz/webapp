@@ -73,6 +73,7 @@ jobs:
         if echo "$packer_output" | grep -q 'A disk image was created'; then
           IMAGE_ID=$(echo "$packer_output" | grep 'A disk image was created' | awk -F': ' '{print $NF}')
           echo "Image ID: $IMAGE_ID"
+          echo "::set-output name=image_id::$IMAGE_ID"
           echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
         else
           echo "Packer build failed or image ID was not found."
@@ -94,81 +95,55 @@ jobs:
       with:
         project_id: ${{ secrets.GCP_VM_PROJECT_ID }}
 
-
-    - name: Get VPC Network Self-Link
-      run: |
-        VPC_NETWORK_SELF_LINK=$(gcloud compute networks describe ${{ secrets.VPC_NETWORK_NAME }} --format='value(selfLink)')
-        echo "VPC_NETWORK_SELF_LINK=$VPC_NETWORK_SELF_LINK" >> $GITHUB_ENV
-
-    - name: Get Subnetwork Self-Link
-      run: |
-        SUBNETWORK_SELF_LINK=$(gcloud compute networks subnets describe ${{ secrets.SUBNETWORK_NAME }} --region ${{ secrets.GCP_REGION }} --format='value(selfLink)')
-        echo "SUBNETWORK_SELF_LINK=$SUBNETWORK_SELF_LINK" >> $GITHUB_ENV
-
-
+    # Create New Instance Template with Latest Image
     - name: Create New Instance Template with Latest Image
-      id: create_template # Added an ID to this step to reference its outputs
+      id: create_template
       run: |
-        TEMPLATE_NAME=webapp-vm-template-$(date +%Y%m%d%H%M%S)
+        TEMPLATE_NAME="webapp-vm-template-$(date +%Y%m%d%H%M%S)"
         gcloud compute instance-templates create $TEMPLATE_NAME \
-          --machine-type=e2-medium \
-          --region=${{ secrets.GCP_REGION }} \
-          --network=${{ env.VPC_NETWORK_SELF_LINK }} \
-          --subnet=${{ env.SUBNETWORK_SELF_LINK }} \
+          --machine-type="e2-medium" \
+          --region="${{ secrets.GCP_REGION }}" \
+          --network="projects/${{ secrets.GCP_VM_PROJECT_ID }}/global/networks/${{ secrets.VPC_NETWORK_NAME }}" \
+          --subnet="projects/${{ secrets.GCP_VM_PROJECT_ID }}/regions/${{ secrets.GCP_REGION }}/subnetworks/${{ secrets.SUBNETWORK_NAME }}" \
           --no-address \
-          --image=${{ steps.packer_build.outputs.image_id }} \
-          --tags=webapp-vm-template,allow-app-traffic,deny-all-traffic,allow-ssh-traffic,load-balancer \
+          --image-project="${{ secrets.GCP_PROJECT_ID }}" \
+          --image="${{ steps.packer_build.outputs.image_id }}" \
+          --tags="webapp-vm-template,allow-app-traffic,deny-all-traffic,allow-ssh-traffic,load-balancer" \
           --metadata=startup-script='#!/bin/bash\nset -e\nENV_PATH="/opt/webapp/.env"\nif [ ! -f "$ENV_PATH" ]; then\n  mkdir -p /opt/webapp\n  sudo gsutil cp gs://${{ secrets.BUCKET_NAME }}/creds.json /opt/webapp/creds.json\n  echo "DB_USERNAME=${{ secrets.DB_USER }}" >> $ENV_PATH\n  echo "DB_PASSWORD=${{ secrets.DB_PASS }}" >> $ENV_PATH\n  echo "DB_HOSTNAME=${{ secrets.DB_IP }}" >> $ENV_PATH\n  echo "DB_NAME=${{ secrets.DB_NAME }}" >> $ENV_PATH\n  echo "LOGFILE_PATH=/var/logs/webapp" >> $ENV_PATH\n  echo "GCP_PROJECTID=${{ secrets.GCP_VM_PROJECT_ID }}" >> $ENV_PATH\n  echo "TOPIC_NAME=${{ secrets.TOPIC_NAME_META }}" >> $ENV_PATH\n  echo "CREDS_JSON=/opt/webapp/creds.json" >> $ENV_PATH\n  sudo chown csye6225:csye6225 $ENV_PATH\n  sudo chown csye6225:csye6225 /opt/webapp/creds.json\n  echo "Startup script has executed."\nelse\n  echo ".env file already exists, skipping environment setup."\nfi' \
-          --service-account=${{ secrets.SERVICE_ACCOUNT_EMAIL }} \
-          --scopes=https://www.googleapis.com/auth/cloud-platform \
-          --disk="auto-delete=yes,boot=yes,device-name=webapp-vm-template,image=${{ steps.packer_build.outputs.image_id }},mode=rw,size=20,type=pd-balanced"
-        echo "::set-output name=template_name::$TEMPLATE_NAME"
-      env:
-        GCP_REGION: ${{ secrets.GCP_REGION }}
-        # Corrected: Environment variable references updated to use the correct syntax
-        VPC_NETWORK_SELF_LINK: ${{ env.VPC_NETWORK_SELF_LINK }}
-        WEBAPP_SUBNET_SELF_LINK: ${{ env.SUBNETWORK_SELF_LINK }}
-        BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
-        DB_USER: ${{ secrets.DB_USER }}
-        DB_PASS: ${{ secrets.DB_PASS }}
-        DB_IP: ${{ secrets.DB_IP }}
-        DB_NAME: ${{ secrets.DB_NAME }}
-        PROJECT_ID: ${{ secrets.GCP_VM_PROJECT_ID }}
-        TOPIC_NAME: ${{ secrets.TOPIC_NAME_META }}
-        SERVICE_ACCOUNT_EMAIL: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          --service-account="${{ secrets.SERVICE_ACCOUNT_EMAIL }}" \
+          --scopes="https://www.googleapis.com/auth/cloud-platform"
+        echo "Template Name: $TEMPLATE_NAME"
+        echo "TEMPLATE_NAME=$TEMPLATE_NAME" >> $GITHUB_ENV
+        
 
-
-    - name: Get Latest Instance Template ID
-      id: get_template_id
-      run: |
-        TEMPLATE_ID=$(gcloud compute instance-templates list --filter="name='${{ steps.create_template.outputs.template_name }}'" --format="value(id)" --limit=1)
-        echo "::set-output name=template_id::$TEMPLATE_ID"
-
+    # Update Managed Instance Group to Use New Template
     - name: Update Managed Instance Group to Use New Template
       run: |
         gcloud compute instance-groups managed set-instance-template ${{ secrets.MIG_NAME }} \
-          --template=${{ steps.get_template_id.outputs.template_id }} \
-          --region=${{ secrets.GCP_REGION }}
-      env:
-        MIG_NAME: ${{ secrets.MIG_NAME }}
-        REGION: ${{ secrets.GCP_REGION }}
+          --template="${{ env.TEMPLATE_NAME }}" \
+          --region="${{ secrets.GCP_REGION }}"
 
-
-    - name: Get Regional Managed Instance Group Self-Link
+    # Start a basic rolling update
+    - name: Start a basic rolling update
       run: |
-        MIG_SELF_LINK=$(gcloud compute instance-groups managed describe ${{ secrets.MIG_NAME }} --region ${{ secrets.GCP_REGION }} --format='value(selfLink)')
-        echo "MIG_SELF_LINK=$MIG_SELF_LINK" >> $GITHUB_ENV
-
-    - name: Wait for MIG Refresh to Complete
+        gcloud compute instance-groups managed rolling-action start-update ${{ secrets.MIG_NAME }} \
+          --version template="${{ env.TEMPLATE_NAME }}" \
+          --region="${{ secrets.GCP_REGION }}"
+        
+        
+        # Monitor the update status using versionTarget.isReached
+    - name: Monitor update status until version target is reached
       run: |
-        OPERATION_STATUS="RUNNING"
-        while [ "$OPERATION_STATUS" == "RUNNING" ]; do
-          OPERATION_STATUS=$(gcloud compute operations list --filter="targetLink=$MIG_LINK AND operationType=update AND status=RUNNING" --format="value(status)" --limit=1)
-          if [ -z "$OPERATION_STATUS" ]; then
-            OPERATION_STATUS="DONE"
-          fi
-          echo "Current operation status: $OPERATION_STATUS"
-          sleep 30
-        done
-      env:
-        MIG_LINK: ${{ env.MIG_SELF_LINK }}
+        $completed = $false
+        while (-not $completed) {
+          $updateStatus = gcloud compute instance-groups managed describe ${{ secrets.MIG_NAME }} --region="${{ secrets.GCP_REGION }}" --format="value(status.versionTarget.isReached)"
+          if ($updateStatus -eq "true") {
+            $completed = $true
+            Write-Output "Update has successfully reached the version target."
+          } else {
+            Write-Output "Update is still in progress..."
+            Start-Sleep -Seconds 30
+          }
+        }
+      shell: pwsh
+
