@@ -63,26 +63,26 @@ jobs:
       with:
         version: 1.8.6
 
-    - name: Build Custom GCP Image with Packer
-      id: packer_build
-      run: |
-        cd packer-dir
-        packer init .
-        packer_output=$(packer build -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' -var 'project_id=${{ secrets.GCP_PROJECT_ID }}' -var 'zone=${{ secrets.GCP_ZONE }}' . ) 
-        echo "$packer_output"
-        if echo "$packer_output" | grep -q 'A disk image was created'; then
-          IMAGE_ID=$(echo "$packer_output" | grep 'A disk image was created' | awk -F': ' '{print $NF}')
-          echo "Image ID: $IMAGE_ID"
-          echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
-        else
-          echo "Packer build failed or image ID was not found."
-          exit 1
-        fi
-      shell: bash
-      env:
-        GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-        GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-        GCP_ZONE: ${{ secrets.GCP_ZONE }}
+    # - name: Build Custom GCP Image with Packer
+    #   id: packer_build
+    #   run: |
+    #     cd packer-dir
+    #     packer init .
+    #     packer_output=$(packer build -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' -var 'project_id=${{ secrets.GCP_PROJECT_ID }}' -var 'zone=${{ secrets.GCP_ZONE }}' . ) 
+    #     echo "$packer_output"
+    #     if echo "$packer_output" | grep -q 'A disk image was created'; then
+    #       IMAGE_ID=$(echo "$packer_output" | grep 'A disk image was created' | awk -F': ' '{print $NF}')
+    #       echo "Image ID: $IMAGE_ID"
+    #       echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
+    #     else
+    #       echo "Packer build failed or image ID was not found."
+    #       exit 1
+    #     fi
+    #   shell: bash
+    #   env:
+    #     GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+    #     GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+    #     GCP_ZONE: ${{ secrets.GCP_ZONE }}
 
     - name: Authenticate to Google Cloud with service account
       uses: google-github-actions/auth@v0.4.0
@@ -94,9 +94,33 @@ jobs:
       with:
         project_id: ${{ secrets.GCP_VM_PROJECT_ID }}
 
+    - name: Prepare Startup Script
+      run: |
+        cat <<'EOF' > startup-script.sh
+        #!/bin/bash
+        set -e
+        ENV_PATH="/opt/webapp/.env"
+        if [ ! -f "$ENV_PATH" ]; then
+          mkdir -p /opt/webapp
+          sudo gsutil cp gs://${{ secrets.BUCKET_NAME }}/creds.json /opt/webapp/creds.json
+          echo "DB_USERNAME=${{ secrets.DB_USER }}" >> $ENV_PATH
+          echo "DB_PASSWORD=${{ secrets.DB_PASS }}" >> $ENV_PATH
+          echo "DB_HOSTNAME=${{ secrets.DB_IP }}" >> $ENV_PATH
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> $ENV_PATH
+          echo "LOGFILE_PATH=/var/logs/webapp" >> $ENV_PATH
+          echo "GCP_PROJECTID=${{ secrets.GCP_VM_PROJECT_ID }}" >> $ENV_PATH
+          echo "TOPIC_NAME=${{ secrets.TOPIC_NAME_META }}" >> $ENV_PATH
+          echo "CREDS_JSON=/opt/webapp/creds.json" >> $ENV_PATH
+          sudo chown csye6225:csye6225 $ENV_PATH
+          sudo chown csye6225:csye6225 /opt/webapp/creds.json
+          echo "Startup script has executed."
+        else
+          echo ".env file already exists, skipping environment setup."
+        fi
+        EOF
+
     # Create New Instance Template with Latest Image
     - name: Create New Instance Template with Latest Image
-      id: create_template
       run: |
         TEMPLATE_NAME="webapp-vm-template-$(date +%Y%m%d%H%M%S)"
         gcloud compute instance-templates create $TEMPLATE_NAME \
@@ -106,9 +130,9 @@ jobs:
           --subnet="projects/${{ secrets.GCP_VM_PROJECT_ID }}/regions/${{ secrets.GCP_REGION }}/subnetworks/${{ secrets.SUBNETWORK_NAME }}" \
           --no-address \
           --image-project="${{ secrets.GCP_PROJECT_ID }}" \
-          --image="${{ env.IMAGE_ID }}" \
+          --image="webapp-image-20240408100008" \
           --tags="webapp-vm-template,allow-app-traffic,deny-all-traffic,allow-ssh-traffic,load-balancer" \
-          --metadata=startup-script='#!/bin/bash\nset -e\nENV_PATH="/opt/webapp/.env"\nif [ ! -f "$ENV_PATH" ]; then\n  mkdir -p /opt/webapp\n  sudo gsutil cp gs://${{ secrets.BUCKET_NAME }}/creds.json /opt/webapp/creds.json\n  echo "DB_USERNAME=${{ secrets.DB_USER }}" >> $ENV_PATH\n  echo "DB_PASSWORD=${{ secrets.DB_PASS }}" >> $ENV_PATH\n  echo "DB_HOSTNAME=${{ secrets.DB_IP }}" >> $ENV_PATH\n  echo "DB_NAME=${{ secrets.DB_NAME }}" >> $ENV_PATH\n  echo "LOGFILE_PATH=/var/logs/webapp" >> $ENV_PATH\n  echo "GCP_PROJECTID=${{ secrets.GCP_VM_PROJECT_ID }}" >> $ENV_PATH\n  echo "TOPIC_NAME=${{ secrets.TOPIC_NAME_META }}" >> $ENV_PATH\n  echo "CREDS_JSON=/opt/webapp/creds.json" >> $ENV_PATH\n  sudo chown csye6225:csye6225 $ENV_PATH\n  sudo chown csye6225:csye6225 /opt/webapp/creds.json\n  echo "Startup script has executed."\nelse\n  echo ".env file already exists, skipping environment setup."\nfi' \
+          --metadata-from-file startup-script=startup-script.sh \
           --service-account="${{ secrets.SERVICE_ACCOUNT_EMAIL }}" \
           --scopes="https://www.googleapis.com/auth/cloud-platform"
         echo "Template Name: $TEMPLATE_NAME"
