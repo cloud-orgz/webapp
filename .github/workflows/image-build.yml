@@ -87,7 +87,7 @@ jobs:
     - name: Authenticate to Google Cloud with service account
       uses: google-github-actions/auth@v0.4.0
       with:
-        credentials_json: ${{ secrets.CRED_JSON_VM }}
+        credentials_json: ${{ secrets.GCP_SA_KEY_VM }}
 
     - name: Set up gcloud CLI
       uses: google-github-actions/setup-gcloud@v0.2.0
