@@ -130,7 +130,7 @@ jobs:
           --subnet="projects/${{ secrets.GCP_VM_PROJECT_ID }}/regions/${{ secrets.GCP_REGION }}/subnetworks/${{ secrets.SUBNETWORK_NAME }}" \
           --no-address \
           --image-project="${{ secrets.GCP_PROJECT_ID }}" \
-          --image="webapp-image-20240408100008" \
+          --image="${{ env.IMAGE_ID }}" \
           --tags="webapp-vm-template,allow-app-traffic,deny-all-traffic,allow-ssh-traffic,load-balancer" \
           --metadata-from-file startup-script=startup-script.sh \
           --service-account="${{ secrets.SERVICE_ACCOUNT_EMAIL }}" \
