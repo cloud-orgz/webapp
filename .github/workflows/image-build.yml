@@ -146,14 +146,14 @@ jobs:
     - name: Update Managed Instance Group to Use New Template
       run: |
         gcloud compute instance-groups managed set-instance-template ${{ secrets.MIG_NAME }} \
-          --template="${{ env.TEMPLATE_NAME }}" \
+          --template="${{ secrets.INSTANCE_TEMPLATE_ID }}${{ env.TEMPLATE_NAME }}" \
           --region="${{ secrets.GCP_REGION }}"
 
     # Start a basic rolling update
     - name: Start a basic rolling update
       run: |
         gcloud compute instance-groups managed rolling-action start-update ${{ secrets.MIG_NAME }} \
-          --version template="${{ env.TEMPLATE_NAME }}" \
+          --version template="${{ secrets.INSTANCE_TEMPLATE_ID }}${{ env.TEMPLATE_NAME }}" \
           --region="${{ secrets.GCP_REGION }}"
         
         
