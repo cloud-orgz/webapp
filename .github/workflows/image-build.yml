@@ -126,15 +126,18 @@ jobs:
         gcloud compute instance-templates create $TEMPLATE_NAME \
           --machine-type="e2-medium" \
           --region="${{ secrets.GCP_REGION }}" \
+          --instance-template-region"${{ secrets.GCP_REGION }}" \
           --network="projects/${{ secrets.GCP_VM_PROJECT_ID }}/global/networks/${{ secrets.VPC_NETWORK_NAME }}" \
           --subnet="projects/${{ secrets.GCP_VM_PROJECT_ID }}/regions/${{ secrets.GCP_REGION }}/subnetworks/${{ secrets.SUBNETWORK_NAME }}" \
           --no-address \
           --image-project="${{ secrets.GCP_PROJECT_ID }}" \
           --image="${{ env.IMAGE_ID }}" \
+          --boot-disk-kms-key="${{ secrets.CMEK_VM_ID }}" \
           --tags="webapp-vm-template,allow-app-traffic,deny-all-traffic,allow-ssh-traffic,load-balancer" \
           --metadata-from-file startup-script=startup-script.sh \
           --service-account="${{ secrets.SERVICE_ACCOUNT_EMAIL }}" \
-          --scopes="https://www.googleapis.com/auth/cloud-platform"
+          --scopes="https://www.googleapis.com/auth/cloud-platform" \
+          --create-disk type=pd-balanced,size=20
         echo "Template Name: $TEMPLATE_NAME"
         echo "TEMPLATE_NAME=$TEMPLATE_NAME" >> $GITHUB_ENV
         
