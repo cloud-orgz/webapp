@@ -126,7 +126,7 @@ jobs:
         gcloud compute instance-templates create $TEMPLATE_NAME \
           --machine-type="e2-medium" \
           --region="${{ secrets.GCP_REGION }}" \
-          --instance-template-region"${{ secrets.GCP_REGION }}" \
+          --instance-template-region="${{ secrets.GCP_REGION }}" \
           --network="projects/${{ secrets.GCP_VM_PROJECT_ID }}/global/networks/${{ secrets.VPC_NETWORK_NAME }}" \
           --subnet="projects/${{ secrets.GCP_VM_PROJECT_ID }}/regions/${{ secrets.GCP_REGION }}/subnetworks/${{ secrets.SUBNETWORK_NAME }}" \
           --no-address \
