@@ -129,7 +129,6 @@ jobs:
           --instance-template-region="${{ secrets.GCP_REGION }}" \
           --network="projects/${{ secrets.GCP_VM_PROJECT_ID }}/global/networks/${{ secrets.VPC_NETWORK_NAME }}" \
           --subnet="projects/${{ secrets.GCP_VM_PROJECT_ID }}/regions/${{ secrets.GCP_REGION }}/subnetworks/${{ secrets.SUBNETWORK_NAME }}" \
-          --no-address \
           --image-project="${{ secrets.GCP_PROJECT_ID }}" \
           --image="${{ env.IMAGE_ID }}" \
           --boot-disk-kms-key="${{ secrets.CMEK_VM_ID }}" \
