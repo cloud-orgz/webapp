@@ -124,7 +124,7 @@ jobs:
       run: |
         TEMPLATE_NAME="webapp-vm-template-$(date +%Y%m%d%H%M%S)"
         gcloud compute instance-templates create $TEMPLATE_NAME \
-          --machine-type="e2-medium" \
+          --machine-type="${{ secrets.GCP_MACH }}" \
           --region="${{ secrets.GCP_REGION }}" \
           --instance-template-region="${{ secrets.GCP_REGION }}" \
           --network="projects/${{ secrets.GCP_VM_PROJECT_ID }}/global/networks/${{ secrets.VPC_NETWORK_NAME }}" \
@@ -135,8 +135,7 @@ jobs:
           --tags="webapp-vm-template,allow-app-traffic,deny-all-traffic,allow-ssh-traffic,load-balancer" \
           --metadata-from-file startup-script=startup-script.sh \
           --service-account="${{ secrets.SERVICE_ACCOUNT_EMAIL }}" \
-          --scopes="https://www.googleapis.com/auth/cloud-platform" \
-          --create-disk type=pd-balanced,size=20
+          --scopes="https://www.googleapis.com/auth/cloud-platform"
         echo "Template Name: $TEMPLATE_NAME"
         echo "TEMPLATE_NAME=$TEMPLATE_NAME" >> $GITHUB_ENV
         
