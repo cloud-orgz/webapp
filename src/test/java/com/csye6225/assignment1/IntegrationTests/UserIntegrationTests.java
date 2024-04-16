@@ -37,8 +37,8 @@ public class UserIntegrationTests {
 
     @Test
     public void testCreateUser() {
-        String url = "/v1/user";
-        String getUrl = "/v1/user/self";
+        String url = "/v5/user";
+        String getUrl = "/v5/user/self";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -75,9 +75,9 @@ public class UserIntegrationTests {
 
     @Test
     public void testUpdateUserAndValidate() {
-        String createUserUrl = "/v1/user";
-        String getUserUrl = "/v1/user/self";
-        String updateUserUrl = "/v1/user/self";
+        String createUserUrl = "/v5/user";
+        String getUserUrl = "/v5/user/self";
+        String updateUserUrl = "/v5/user/self";
 
         String generatedEmail = generateRandomEmail();
         String password = "1234";
