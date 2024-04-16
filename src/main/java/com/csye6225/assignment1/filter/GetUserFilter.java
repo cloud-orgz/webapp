@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 @Order(5)
-@WebFilter("/v1/user/self")
+@WebFilter("/v5/user/self")
 public class GetUserFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(GetUserFilter.class);
