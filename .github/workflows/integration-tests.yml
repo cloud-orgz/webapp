@@ -2,7 +2,7 @@ name: Spring Boot Integration tests
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
@@ -12,12 +12,12 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.GIT_MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: cloud
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -p${{ secrets.GIT_MYSQL_PASSWORD }}"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
@@ -46,15 +46,12 @@ jobs:
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/cloud
           SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.GIT_MYSQL_PASSWORD }}
+          SPRING_DATASOURCE_PASSWORD: root
 
           LOGFILE_PATH: target/logs
           GCP_PROJECTID: ${{ secrets.GCP_PROJECTID }}
           TOPIC_NAME: ${{ secrets.TOPIC_NAME }}
 
-          # your code expects a file path
           CREDS_JSON: ${{ runner.temp }}/gcp-creds.json
-
-          # optional: some google libs also look for this standard env var
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-creds.json
         run: mvn -q test
