@@ -9,165 +9,136 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Start MySQL service
-      run: sudo systemctl start mysql
-
-    - name: Create MySQL Database
-      env:
-        GIT_MYSQL_USER: ${{ secrets.GIT_MYSQL_USER }}
-        GIT_MYSQL_PASSWORD: ${{ secrets.GIT_MYSQL_PASSWORD }}
-      run: |
-        mysql -u "${GIT_MYSQL_USER}" -p"${GIT_MYSQL_PASSWORD}" -e "CREATE DATABASE cloud;"
-
-    - name: Set up JDK 17
-      uses: actions/setup-java@v2
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
       with:
-        java-version: '17'
-        distribution: 'adopt'
-        cache: 'maven'
-
-    - name: Create GCP Credentials File
-      env:
-        GCP_CREDENTIALS: ${{ secrets.CREDS_JSON }}
-      run: |
-        echo "$GCP_CREDENTIALS" > src/main/resources/creds.json
-
-    - name: Test with Maven
-      run: mvn test
-      env:
-        SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/cloud
-        SPRING_DATASOURCE_USERNAME: ${{ secrets.GIT_MYSQL_USER }}
-        SPRING_DATASOURCE_PASSWORD: ${{ secrets.GIT_MYSQL_PASSWORD }}
-        LOGFILE_PATH: target/logs
-        GCP_PROJECTID: ${{ secrets.GCP_PROJECTID }}
-        TOPIC_NAME: ${{ secrets.TOPIC_NAME }}
-        CREDS_JSON: ${{ github.workspace }}/src/main/resources/creds.json
+        distribution: temurin
+        java-version: "21"
+        cache: maven
         
     - name: Build with Maven
       run: mvn clean package -DskipTests
 
     - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v0.4.0
+      uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
 
     - name: Set up gcloud CLI
-      uses: google-github-actions/setup-gcloud@v0.2.0
+      uses: google-github-actions/setup-gcloud@v3
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
       
-    - name: Setup `packer`
-      uses: hashicorp/setup-packer@main
-      id: setup
+    - name: Setup packer
+      uses: hashicorp/setup-packer@v2
       with:
-        version: 1.8.6
+        version: "1.8.6"
 
     - name: Build Custom GCP Image with Packer
-      id: packer_build
       run: |
+        ls -la target
+        JAR_PATH=$(ls target/*.jar | head -n 1)
+        echo "Using jar: $JAR_PATH"
+
         cd packer-dir
         packer init .
-        packer_output=$(packer build -var 'artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar' -var 'project_id=${{ secrets.GCP_PROJECT_ID }}' -var 'zone=${{ secrets.GCP_ZONE }}' . ) 
-        echo "$packer_output"
-        if echo "$packer_output" | grep -q 'A disk image was created'; then
-          IMAGE_ID=$(echo "$packer_output" | grep 'A disk image was created' | awk -F': ' '{print $NF}')
-          echo "Image ID: $IMAGE_ID"
-          echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
-        else
-          echo "Packer build failed or image ID was not found."
-          exit 1
-        fi
+        packer validate \
+          -var "artifact_path=${{ github.workspace }}/$JAR_PATH" \
+          -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
+          -var "zone=${{ secrets.GCP_ZONE }}" \
+          .
+
+        packer build \
+          -var "artifact_path=${{ github.workspace }}/$JAR_PATH" \
+          -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
+          -var "zone=${{ secrets.GCP_ZONE }}" \
+          .
       shell: bash
-      env:
-        GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-        GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-        GCP_ZONE: ${{ secrets.GCP_ZONE }}
 
-    - name: Authenticate to Google Cloud with service account
-      uses: google-github-actions/auth@v0.4.0
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY_VM }}
-
-    - name: Set up gcloud CLI
-      uses: google-github-actions/setup-gcloud@v0.2.0
-      with:
-        project_id: ${{ secrets.GCP_VM_PROJECT_ID }}
-
-    - name: Prepare Startup Script
-      run: |
-        cat <<'EOF' > startup-script.sh
-        #!/bin/bash
-        set -e
-        ENV_PATH="/opt/webapp/.env"
-        if [ ! -f "$ENV_PATH" ]; then
-          mkdir -p /opt/webapp
-          sudo gsutil cp gs://${{ secrets.BUCKET_NAME }}/creds.json /opt/webapp/creds.json
-          echo "DB_USERNAME=${{ secrets.DB_USER }}" >> $ENV_PATH
-          echo "DB_PASSWORD=${{ secrets.DB_PASS }}" >> $ENV_PATH
-          echo "DB_HOSTNAME=${{ secrets.DB_IP }}" >> $ENV_PATH
-          echo "DB_NAME=${{ secrets.DB_NAME }}" >> $ENV_PATH
-          echo "LOGFILE_PATH=/var/logs/webapp" >> $ENV_PATH
-          echo "GCP_PROJECTID=${{ secrets.GCP_VM_PROJECT_ID }}" >> $ENV_PATH
-          echo "TOPIC_NAME=${{ secrets.TOPIC_NAME_META }}" >> $ENV_PATH
-          echo "CREDS_JSON=/opt/webapp/creds.json" >> $ENV_PATH
-          sudo chown csye6225:csye6225 $ENV_PATH
-          sudo chown csye6225:csye6225 /opt/webapp/creds.json
-          echo "Startup script has executed."
-        else
-          echo ".env file already exists, skipping environment setup."
-        fi
-        EOF
-
-    # Create New Instance Template with Latest Image
-    - name: Create New Instance Template with Latest Image
-      run: |
-        TEMPLATE_NAME="webapp-vm-template-$(date +%Y%m%d%H%M%S)"
-        gcloud compute instance-templates create $TEMPLATE_NAME \
-          --machine-type="${{ secrets.GCP_MACH }}" \
-          --region="${{ secrets.GCP_REGION }}" \
-          --instance-template-region="${{ secrets.GCP_REGION }}" \
-          --network="projects/${{ secrets.GCP_VM_PROJECT_ID }}/global/networks/${{ secrets.VPC_NETWORK_NAME }}" \
-          --subnet="projects/${{ secrets.GCP_VM_PROJECT_ID }}/regions/${{ secrets.GCP_REGION }}/subnetworks/${{ secrets.SUBNETWORK_NAME }}" \
-          --image-project="${{ secrets.GCP_PROJECT_ID }}" \
-          --image="${{ env.IMAGE_ID }}" \
-          --boot-disk-kms-key="${{ secrets.CMEK_VM_ID }}" \
-          --tags="webapp-vm-template,allow-app-traffic,deny-all-traffic,allow-ssh-traffic,load-balancer" \
-          --metadata-from-file startup-script=startup-script.sh \
-          --service-account="${{ secrets.SERVICE_ACCOUNT_EMAIL }}" \
-          --scopes="https://www.googleapis.com/auth/cloud-platform"
-        echo "Template Name: $TEMPLATE_NAME"
-        echo "TEMPLATE_NAME=$TEMPLATE_NAME" >> $GITHUB_ENV
-        
-
-    # Update Managed Instance Group to Use New Template
-    - name: Update Managed Instance Group to Use New Template
-      run: |
-        gcloud compute instance-groups managed set-instance-template ${{ secrets.MIG_NAME }} \
-          --template="${{ secrets.INSTANCE_TEMPLATE_ID }}${{ env.TEMPLATE_NAME }}" \
-          --region="${{ secrets.GCP_REGION }}"
-
-    # Start a basic rolling update
-    - name: Start a basic rolling update
-      run: |
-        gcloud compute instance-groups managed rolling-action start-update ${{ secrets.MIG_NAME }} \
-          --version template="${{ secrets.INSTANCE_TEMPLATE_ID }}${{ env.TEMPLATE_NAME }}" \
-          --region="${{ secrets.GCP_REGION }}"
-        
-        
-        # Monitor the update status using versionTarget.isReached
-    - name: Monitor update status until version target is reached
-      run: |
-        $completed = $false
-        while (-not $completed) {
-          $updateStatus = gcloud compute instance-groups managed describe ${{ secrets.MIG_NAME }} --region="${{ secrets.GCP_REGION }}" --format="value(status.versionTarget.isReached)"
-          if ($updateStatus -eq "true") {
-            $completed = $true
-            Write-Output "Update has successfully reached the version target."
-          } else {
-            Write-Output "Update is still in progress..."
-            Start-Sleep -Seconds 30
-          }
-        }
-      shell: pwsh
+#    - name: Authenticate to Google Cloud with service account
+#      uses: google-github-actions/auth@v0.4.0
+#      with:
+#        credentials_json: ${{ secrets.GCP_SA_KEY_VM }}
+#
+#    - name: Set up gcloud CLI
+#      uses: google-github-actions/setup-gcloud@v0.2.0
+#      with:
+#        project_id: ${{ secrets.GCP_VM_PROJECT_ID }}
+#
+#    - name: Prepare Startup Script
+#      run: |
+#        cat <<'EOF' > startup-script.sh
+#        #!/bin/bash
+#        set -e
+#        ENV_PATH="/opt/webapp/.env"
+#        if [ ! -f "$ENV_PATH" ]; then
+#          mkdir -p /opt/webapp
+#          sudo gsutil cp gs://${{ secrets.BUCKET_NAME }}/creds.json /opt/webapp/creds.json
+#          echo "DB_USERNAME=${{ secrets.DB_USER }}" >> $ENV_PATH
+#          echo "DB_PASSWORD=${{ secrets.DB_PASS }}" >> $ENV_PATH
+#          echo "DB_HOSTNAME=${{ secrets.DB_IP }}" >> $ENV_PATH
+#          echo "DB_NAME=${{ secrets.DB_NAME }}" >> $ENV_PATH
+#          echo "LOGFILE_PATH=/var/logs/webapp" >> $ENV_PATH
+#          echo "GCP_PROJECTID=${{ secrets.GCP_VM_PROJECT_ID }}" >> $ENV_PATH
+#          echo "TOPIC_NAME=${{ secrets.TOPIC_NAME_META }}" >> $ENV_PATH
+#          echo "CREDS_JSON=/opt/webapp/creds.json" >> $ENV_PATH
+#          sudo chown csye6225:csye6225 $ENV_PATH
+#          sudo chown csye6225:csye6225 /opt/webapp/creds.json
+#          echo "Startup script has executed."
+#        else
+#          echo ".env file already exists, skipping environment setup."
+#        fi
+#        EOF
+#
+#    # Create New Instance Template with Latest Image
+#    - name: Create New Instance Template with Latest Image
+#      run: |
+#        TEMPLATE_NAME="webapp-vm-template-$(date +%Y%m%d%H%M%S)"
+#        gcloud compute instance-templates create $TEMPLATE_NAME \
+#          --machine-type="${{ secrets.GCP_MACH }}" \
+#          --region="${{ secrets.GCP_REGION }}" \
+#          --instance-template-region="${{ secrets.GCP_REGION }}" \
+#          --network="projects/${{ secrets.GCP_VM_PROJECT_ID }}/global/networks/${{ secrets.VPC_NETWORK_NAME }}" \
+#          --subnet="projects/${{ secrets.GCP_VM_PROJECT_ID }}/regions/${{ secrets.GCP_REGION }}/subnetworks/${{ secrets.SUBNETWORK_NAME }}" \
+#          --image-project="${{ secrets.GCP_PROJECT_ID }}" \
+#          --image="${{ env.IMAGE_ID }}" \
+#          --boot-disk-kms-key="${{ secrets.CMEK_VM_ID }}" \
+#          --tags="webapp-vm-template,allow-app-traffic,deny-all-traffic,allow-ssh-traffic,load-balancer" \
+#          --metadata-from-file startup-script=startup-script.sh \
+#          --service-account="${{ secrets.SERVICE_ACCOUNT_EMAIL }}" \
+#          --scopes="https://www.googleapis.com/auth/cloud-platform"
+#        echo "Template Name: $TEMPLATE_NAME"
+#        echo "TEMPLATE_NAME=$TEMPLATE_NAME" >> $GITHUB_ENV
+#
+#
+#    # Update Managed Instance Group to Use New Template
+#    - name: Update Managed Instance Group to Use New Template
+#      run: |
+#        gcloud compute instance-groups managed set-instance-template ${{ secrets.MIG_NAME }} \
+#          --template="${{ secrets.INSTANCE_TEMPLATE_ID }}${{ env.TEMPLATE_NAME }}" \
+#          --region="${{ secrets.GCP_REGION }}"
+#
+#    # Start a basic rolling update
+#    - name: Start a basic rolling update
+#      run: |
+#        gcloud compute instance-groups managed rolling-action start-update ${{ secrets.MIG_NAME }} \
+#          --version template="${{ secrets.INSTANCE_TEMPLATE_ID }}${{ env.TEMPLATE_NAME }}" \
+#          --region="${{ secrets.GCP_REGION }}"
+#
+#
+#        # Monitor the update status using versionTarget.isReached
+#    - name: Monitor update status until version target is reached
+#      run: |
+#        $completed = $false
+#        while (-not $completed) {
+#          $updateStatus = gcloud compute instance-groups managed describe ${{ secrets.MIG_NAME }} --region="${{ secrets.GCP_REGION }}" --format="value(status.versionTarget.isReached)"
+#          if ($updateStatus -eq "true") {
+#            $completed = $true
+#            Write-Output "Update has successfully reached the version target."
+#          } else {
+#            Write-Output "Update is still in progress..."
+#            Start-Sleep -Seconds 30
+#          }
+#        }
+#      shell: pwsh
 
