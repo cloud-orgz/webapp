@@ -86,3 +86,8 @@ crash.log
 
 # For built boxes
 *.box
+
+### logs ###
+/logs
+
+*.json
