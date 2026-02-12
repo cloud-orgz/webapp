@@ -11,7 +11,7 @@ variable "zone" {
 variable "image_family" {
   type        = string
   description = "Image family to use as a base"
-  default     = "centos-stream-8"
+  default     = "centos-stream-9"
 }
 
 variable "machine_type" {
