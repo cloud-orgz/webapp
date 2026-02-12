@@ -2,49 +2,59 @@ name: Spring Boot Integration tests
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v2
-      - name: Start MySQL service
-        run: sudo systemctl start mysql
-
-      - name: Create MySQL Database
+    services:
+      mysql:
+        image: mysql:8.0
         env:
-          GIT_MYSQL_USER: ${{ secrets.GIT_MYSQL_USER }}
-          GIT_MYSQL_PASSWORD: ${{ secrets.GIT_MYSQL_PASSWORD }}
-        run: |
-          mysql -u "${GIT_MYSQL_USER}" -p"${GIT_MYSQL_PASSWORD}" -e "CREATE DATABASE cloud;"
+          MYSQL_ROOT_PASSWORD: ${{ secrets.GIT_MYSQL_PASSWORD }}
+          MYSQL_DATABASE: cloud
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -p${{ secrets.GIT_MYSQL_PASSWORD }}"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v3
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
-          java-version: '17'
-          distribution: 'adopt'
-          cache: 'maven'
-        env:
-          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          java-version: "17"
+          distribution: "temurin"
+          cache: "maven"
 
       - name: Create GCP Credentials File
         env:
-          GCP_CREDENTIALS: ${{ secrets.CREDS_JSON }}
+          GCP_APP_CREDS_B64: ${{ secrets.GCP_APP_CREDS_B64 }}
         run: |
-          echo "$GCP_CREDENTIALS" > src/main/resources/creds.json
+          echo "$GCP_APP_CREDS_B64" | base64 -d > "$RUNNER_TEMP/gcp-creds.json"
+          ls -la "$RUNNER_TEMP/gcp-creds.json"
 
       - name: Build with Maven
-        run: mvn clean install -DskipTests
+        run: mvn -q clean install -DskipTests
 
       - name: Test with Maven
-        run: mvn test
         env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/cloud
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.GIT_MYSQL_USER }}
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/cloud
+          SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.GIT_MYSQL_PASSWORD }}
-          LOGFILE_PATH : target/logs
-          GCP_PROJECTID : ${{ secrets.GCP_PROJECTID }}
-          TOPIC_NAME : ${{ secrets.TOPIC_NAME }}
-          CREDS_JSON : ${{ github.workspace }}/src/main/resources/creds.json
+
+          LOGFILE_PATH: target/logs
+          GCP_PROJECTID: ${{ secrets.GCP_PROJECTID }}
+          TOPIC_NAME: ${{ secrets.TOPIC_NAME }}
+
+          # your code expects a file path
+          CREDS_JSON: ${{ runner.temp }}/gcp-creds.json
+
+          # optional: some google libs also look for this standard env var
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-creds.json
+        run: mvn -q test
