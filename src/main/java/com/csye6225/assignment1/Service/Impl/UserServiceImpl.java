@@ -31,7 +31,7 @@ public class UserServiceImpl implements UserService {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private PubSubPublisherServiceImpl pubSubPublisherService;
+    private PubSubPublisherService pubSubPublisherService;
 
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
     @Override
