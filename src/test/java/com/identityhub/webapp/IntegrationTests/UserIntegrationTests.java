@@ -1,6 +1,6 @@
 package com.identityhub.webapp.IntegrationTests;
 
-import identityhub.webapp.entities.User;
+import com.identityhub.webapp.entities.User;
 import com.identityhub.webapp.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.json.JSONObject;
