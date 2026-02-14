@@ -9,15 +9,15 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/bash -c "for i in {1..10}; do if [ -f /opt/webapp/.env ]; then break; fi; sleep 1; done"
-User=csye6225
-Group=csye6225
+User=identityhub
+Group=identityhub
 EnvironmentFile=/opt/webapp/.env
-ExecStart=/usr/bin/java -jar /opt/webapp/assignment1-1.0.0.jar
+ExecStart=/usr/bin/java -jar /opt/webapp/webapp-1.0.0.jar
 Restart=always
 RestartSec=3
 StandardOutput=syslog
 StandardError=syslog
-SyslogIdentifier=csye6225
+SyslogIdentifier=identityhub
 
 [Install]
 WantedBy=multi-user.target

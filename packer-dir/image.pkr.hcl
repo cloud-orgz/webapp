@@ -9,7 +9,7 @@ build {
   // Copy application JAR from local path to the image
   provisioner "file" {
     source      = var.artifact_path
-    destination = "/opt/webapp/assignment1-1.0.0.jar"
+    destination = "/opt/webapp/webapp-1.0.0.jar"
   }
 
   provisioner "shell" {
