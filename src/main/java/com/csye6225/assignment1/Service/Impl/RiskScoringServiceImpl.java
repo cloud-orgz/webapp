@@ -1,9 +1,10 @@
 package com.csye6225.assignment1.Service.Impl;
 
+import com.csye6225.assignment1.Service.RiskScoringService;
 import com.google.cloud.vertexai.VertexAI;
 import com.google.cloud.vertexai.api.GenerateContentResponse;
-import com.google.cloud.vertexai.generativemodel.GenerativeModel;
-import com.google.cloud.vertexai.generativemodel.ResponseHandler;
+import com.google.cloud.vertexai.generativeai.GenerativeModel;
+import com.google.cloud.vertexai.generativeai.ResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,9 +14,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class RiskScoringServiceImpl {
+public class RiskScoringServiceImpl implements RiskScoringService {
 
-    private static final Logger logger = LoggerFactory.getLogger(RiskScoringService.class);
+    private static final Logger logger = LoggerFactory.getLogger(RiskScoringServiceImpl.class);
 
     @Value("${spring.cloud.gcp.project-id}")
     private String projectId;
@@ -26,10 +27,7 @@ public class RiskScoringServiceImpl {
     @Value("${vertex.ai.model:gemini-2.0-flash}")
     private String modelName;
 
-    /**
-     * Calls Vertex AI Gemini to assess registration risk.
-     * Returns a Map with "riskScore" (0.0 to 1.0) and "riskReason".
-     */
+    @Override
     public Map<String, Object> assessRisk(String email, String firstName, String lastName) {
         Map<String, Object> result = new HashMap<>();
 
@@ -46,9 +44,8 @@ public class RiskScoringServiceImpl {
 
         } catch (Exception e) {
             logger.error("Vertex AI risk scoring failed for {}: {}", email, e.getMessage());
-            // Default to low risk on failure — don't block registration
             result.put("riskScore", 0.0);
-            result.put("riskReason", "Risk assessment unavailable — defaulting to low risk");
+            result.put("riskReason", "Risk assessment unavailable - defaulting to low risk");
         }
 
         return result;
@@ -83,13 +80,11 @@ public class RiskScoringServiceImpl {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            // Clean up response — remove markdown code fences if present
             String cleaned = responseText.trim();
             if (cleaned.startsWith("```")) {
                 cleaned = cleaned.replaceAll("```json\\s*", "").replaceAll("```\\s*", "");
             }
 
-            // Simple JSON parsing
             org.json.JSONObject json = new org.json.JSONObject(cleaned);
             result.put("riskScore", json.getDouble("riskScore"));
             result.put("riskReason", json.getString("riskReason"));

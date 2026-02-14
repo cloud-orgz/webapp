@@ -1,6 +1,7 @@
 package com.csye6225.assignment1.Service;
 
-@Service
-public class RiskScoringService {
-    public Map<String, Object> assessRisk(String email, String firstName, String lastName);
+import java.util.Map;
+
+public interface RiskScoringService {
+    Map<String, Object> assessRisk(String email, String firstName, String lastName);
 }
