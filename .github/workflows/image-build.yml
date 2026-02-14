@@ -99,7 +99,7 @@ jobs:
       - name: Set up gcloud CLI (VM/MIG project)
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: ${{ secrets.GCP_VM_PROJECT_ID }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Prepare Startup Script
         shell: bash
@@ -120,7 +120,7 @@ jobs:
             echo "DB_HOSTNAME=${DB_IP}"
             echo "DB_NAME=${DB_NAME}"
             echo "LOGFILE_PATH=/var/logs/webapp"
-            echo "GCP_PROJECTID=${GCP_VM_PROJECT_ID}"
+            echo "GCP_PROJECTID=${GCP_PROJECT_ID}"
             echo "TOPIC_NAME=${TOPIC_NAME_META}"
             echo "CREDS_JSON=/opt/webapp/creds.json"
           } | sudo tee "$ENV_PATH" >/dev/null
@@ -138,7 +138,7 @@ jobs:
           DB_PASS: ${{ secrets.DB_PASS }}
           DB_IP: ${{ secrets.DB_IP }}
           DB_NAME: ${{ secrets.DB_NAME }}
-          GCP_VM_PROJECT_ID: ${{ secrets.GCP_VM_PROJECT_ID }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           TOPIC_NAME_META: ${{ secrets.TOPIC_NAME_META }}
 
       - name: Create New Instance Template with Latest Image
@@ -148,10 +148,10 @@ jobs:
           TEMPLATE_NAME="webapp-vm-template-$(date +%Y%m%d%H%M%S)"
           
           gcloud compute instance-templates create "$TEMPLATE_NAME" \
-            --project="${{ secrets.GCP_VM_PROJECT_ID }}" \
+            --project="${{ secrets.GCP_PROJECT_ID }}" \
             --machine-type="${{ secrets.GCP_MACH }}" \
-            --network="projects/${{ secrets.GCP_VM_PROJECT_ID }}/global/networks/${{ secrets.VPC_NETWORK_NAME }}" \
-            --subnet="projects/${{ secrets.GCP_VM_PROJECT_ID }}/regions/${{ secrets.GCP_REGION }}/subnetworks/${{ secrets.SUBNETWORK_NAME }}" \
+            --network="projects/${{ secrets.GCP_PROJECT_ID }}/global/networks/${{ secrets.VPC_NETWORK_NAME }}" \
+            --subnet="projects/${{ secrets.GCP_PROJECT_ID }}/regions/${{ secrets.GCP_REGION }}/subnetworks/${{ secrets.SUBNETWORK_NAME }}" \
             --image-project="${{ secrets.GCP_PROJECT_ID }}" \
             --image="${IMAGE_ID}" \
             --boot-disk-kms-key="${{ secrets.CMEK_VM_ID }}" \
@@ -168,7 +168,7 @@ jobs:
         run: |
           set -euo pipefail
           gcloud compute instance-groups managed set-instance-template "${{ secrets.MIG_NAME }}" \
-            --project="${{ secrets.GCP_VM_PROJECT_ID }}" \
+            --project="${{ secrets.GCP_PROJECT_ID }}" \
             --template="${TEMPLATE_NAME}" \
             --region="${{ secrets.GCP_REGION }}"
 
@@ -177,7 +177,7 @@ jobs:
         run: |
           set -euo pipefail
           gcloud compute instance-groups managed rolling-action start-update "${{ secrets.MIG_NAME }}" \
-            --project="${{ secrets.GCP_VM_PROJECT_ID }}" \
+            --project="${{ secrets.GCP_PROJECT_ID }}" \
             --region="${{ secrets.GCP_REGION }}" \
             --version="template=${TEMPLATE_NAME}"
 
@@ -187,7 +187,7 @@ jobs:
           set -euo pipefail
           while true; do
             updateStatus=$(gcloud compute instance-groups managed describe "${{ secrets.MIG_NAME }}" \
-              --project="${{ secrets.GCP_VM_PROJECT_ID }}" \
+              --project="${{ secrets.GCP_PROJECT_ID }}" \
               --region="${{ secrets.GCP_REGION }}" \
               --format="value(status.versionTarget.isReached)")
             if [[ "$updateStatus" == "true" || "$updateStatus" == "True" ]]; then
