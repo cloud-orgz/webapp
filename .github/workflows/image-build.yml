@@ -78,7 +78,7 @@ jobs:
           cd packer-dir
           packer init .
           packer_output=$(packer build -machine-readable \
-            -var "artifact_path=${{ github.workspace }}/target/assignment1-1.0.0.jar" \
+            -var "artifact_path=${{ github.workspace }}/target/webapp-1.0.0.jar" \
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "zone=${{ secrets.GCP_ZONE }}" \
             . | tee /tmp/packer.log)
@@ -125,7 +125,7 @@ jobs:
             echo "CREDS_JSON=/opt/webapp/creds.json"
           } | sudo tee "\$ENV_PATH" >/dev/null
 
-          sudo chown csye6225:csye6225 "\$ENV_PATH" /opt/webapp/creds.json
+          sudo chown identityhub:identityhub "\$ENV_PATH" /opt/webapp/creds.json
           sudo chmod 640 "\$ENV_PATH" /opt/webapp/creds.json
 
           sudo systemctl daemon-reload || true

@@ -45,5 +45,5 @@ jobs:
         run: |
           packer validate \
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
-            -var "artifact_path=${{ github.workspace }}/src/main/java/com/csye6225/assignment1/Assignment1Application.java" \
+            -var "artifact_path=${{ github.workspace }}/src/main/java/com/identityhub/webapp/IdentityHubApplication.java" \
             -var "zone=${{ secrets.GCP_ZONE }}" .

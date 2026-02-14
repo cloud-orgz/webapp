@@ -8,11 +8,11 @@
 		<version>3.2.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.csye6225</groupId>
-	<artifactId>assignment1</artifactId>
+	<groupId>com.identityhub</groupId>
+	<artifactId>webapp</artifactId>
 	<version>1.0.0</version>
-	<name>assignment1</name>
-	<description>Assignment 1 for CSYE 6225</description>
+	<name>webapp</name>
+	<description>IdentityHub - Cloud Native Web Application</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>
