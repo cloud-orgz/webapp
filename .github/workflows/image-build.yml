@@ -180,9 +180,9 @@ jobs:
             --project="${{ secrets.GCP_PROJECT_ID }}" \
             --region="${{ secrets.GCP_REGION }}" \
             --version="template=${TEMPLATE_NAME}" \
-            --max-surge=1 \
+            --max-surge=2 \
             --max-unavailable=0
-
+            
       - name: Monitor update status until version target is reached
         shell: bash
         run: |
