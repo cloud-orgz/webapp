@@ -104,16 +104,16 @@ jobs:
       - name: Prepare Startup Script
         shell: bash
         run: |
-          cat <<'EOF' > startup-script.sh
+          cat <<EOF > startup-script.sh
           #!/bin/bash
           set -euo pipefail
           ENV_PATH="/opt/webapp/.env"
           sudo mkdir -p /opt/webapp
-          sudo rm -f "$ENV_PATH"
-          sudo touch "$ENV_PATH"
-          
+          sudo rm -f "\$ENV_PATH"
+          sudo touch "\$ENV_PATH"
+
           sudo gsutil cp "gs://${BUCKET_NAME}/creds.json" /opt/webapp/creds.json
-          
+
           {
             echo "DB_USERNAME=${DB_USER}"
             echo "DB_PASSWORD=${DB_PASS}"
@@ -123,11 +123,11 @@ jobs:
             echo "GCP_PROJECTID=${GCP_PROJECT_ID}"
             echo "TOPIC_NAME=${TOPIC_NAME_META}"
             echo "CREDS_JSON=/opt/webapp/creds.json"
-          } | sudo tee "$ENV_PATH" >/dev/null
-          
-          sudo chown csye6225:csye6225 "$ENV_PATH" /opt/webapp/creds.json
-          sudo chmod 640 "$ENV_PATH" /opt/webapp/creds.json
-          
+          } | sudo tee "\$ENV_PATH" >/dev/null
+
+          sudo chown csye6225:csye6225 "\$ENV_PATH" /opt/webapp/creds.json
+          sudo chmod 640 "\$ENV_PATH" /opt/webapp/creds.json
+
           sudo systemctl daemon-reload || true
           sudo systemctl restart javaapp.service || true
           EOF
