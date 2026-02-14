@@ -1,7 +1,7 @@
 package com.identityhub.webapp.IntegrationTests;
 
-import src.main.java.com.identityhub.webapp.entities.User;
-import src.main.java.com.identityhub.webapp.repository.UserRepository;
+import identityhub.webapp.entities.User;
+import com.identityhub.webapp.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
