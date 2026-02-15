@@ -98,6 +98,23 @@ public class UserController {
         return ResponseEntity.ok(responseBody);
     }
 
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        UsernamePasswordAuthenticationToken authToken = (UsernamePasswordAuthenticationToken) principal;
+        UserDetails userDetails = (UserDetails) authToken.getPrincipal();
+
+        try {
+            service.resendVerification(userDetails.getUsername());
+            return ResponseEntity.ok("Verification email resent successfully.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
 
     private Map<String, Object> UserRequestBody(User user) {
         Map<String, Object> responseBody = new HashMap<>();

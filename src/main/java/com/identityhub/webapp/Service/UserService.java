@@ -17,4 +17,6 @@ public interface UserService {
 
     boolean isUserVerified(String username);
 
+    void resendVerification(String username);
+
 }
