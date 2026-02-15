@@ -105,4 +105,17 @@ public class UserServiceImpl implements UserService {
         return user.isVerified();
     }
 
+    @Override
+    public void resendVerification(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+
+        if (user.isVerified()) {
+            throw new IllegalStateException("User is already verified.");
+        }
+
+        logger.info("Resending verification email for user: {}", username);
+        pubSubPublisherService.publishNewUserMessage(user);
+    }
+
 }
