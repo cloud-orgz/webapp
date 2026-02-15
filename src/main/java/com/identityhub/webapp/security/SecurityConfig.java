@@ -27,6 +27,7 @@ public class SecurityConfig {
                         .requestMatchers("/v5/user").permitAll()
                         .requestMatchers("/v1/user/verify").permitAll()
                         .requestMatchers("/v5/user/self").authenticated()
+                        .requestMatchers("/v5/user/resend-verification").authenticated()
                 )
                 .httpBasic() // Use HTTP Basic authentication
                 .and()
