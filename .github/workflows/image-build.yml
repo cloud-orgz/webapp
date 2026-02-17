@@ -158,7 +158,8 @@ jobs:
             --tags="webapp-vm-template,allow-app-traffic,deny-all-traffic,allow-ssh-traffic,load-balancer" \
             --metadata-from-file startup-script=startup-script.sh \
             --service-account="${{ secrets.SERVICE_ACCOUNT_EMAIL }}" \
-            --scopes="https://www.googleapis.com/auth/cloud-platform"
+            --scopes="https://www.googleapis.com/auth/cloud-platform" \
+            --no-address
           
           echo "TEMPLATE_NAME=$TEMPLATE_NAME" >> $GITHUB_ENV
           echo "Template Name: $TEMPLATE_NAME"
